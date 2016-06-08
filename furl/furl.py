@@ -13,7 +13,7 @@ import re
 import abc
 import warnings
 from posixpath import normpath
-
+import urlparse
 import six
 import urllib
 from urllib import quote, unquote, quote_plus
@@ -536,8 +536,7 @@ class Query(object):
             delimiter = delimeter
 
         pairs = []
-        sixurl = urllib.parse  # six.moves.urllib.parse
-        quote_func = sixurl.quote_plus if quote_plus else sixurl.quote
+        quote_func = urllib.quote_plus
         for key, value in self.params.iterallitems():
             utf8key = utf8(key, utf8(attemptstr(key)))
             utf8value = utf8(value, utf8(attemptstr(value)))
@@ -625,11 +624,11 @@ class Query(object):
                 if not valid_key or not valid_value:
                     s = ("Improperly encoded query string received: '%s'. "
                          "Proceeding, but did you mean '%s'?" %
-                         (querystr, urllib.parse.urlencode(pairs)))
+                         (querystr, urlparse.urlencode(pairs)))
                     warnings.warn(s, UserWarning)
 
         items = []
-        parsed_items = urllib.parse.parse_qsl(querystr, keep_blank_values=True)
+        parsed_items = urlparse.parse_qsl(querystr, keep_blank_values=True)
         for (key, value), pairstr in six.moves.zip(parsed_items, pairstrs):
             # Empty value without '=', like '?sup'.
             if key == quote_plus(utf8(pairstr)):
@@ -916,8 +915,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
         Raises: ValueError on invalid host string or malformed IPv6 address.
         """
         # Invalid IPv6 literal.
-        urllib.parse.urlsplit('http://%s/' % host)  # Raises ValueError.
-
+        urlparse.urlsplit('http://%s/' % host)  # Raises ValueError.
         # Invalid host string.
         resembles_ipv6_literal = (
             host is not None and lget(host, 0) == '[' and ':' in host and
@@ -977,7 +975,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
         Raises: ValueError on invalid port or malformed IPv6 address.
         """
         # Raises ValueError on malformed IPv6 addresses.
-        urllib.parse.urlsplit('http://%s/' % netloc)
+        urlparse.urlsplit('http://%s/' % netloc)
 
         username = password = host = port = None
 
@@ -1242,7 +1240,7 @@ class furl(URLPathCompositionInterface, QueryCompositionInterface,
         return self
 
     def tostr(self, query_delimiter='&', query_quote_plus=True):
-        url = urllib.parse.urlunsplit((
+        url = urlparse.urlunsplit((
             self.scheme or '',  # Must be text type in Python 3.
             self.netloc,
             str(self.path),
@@ -1348,9 +1346,9 @@ def urlsplit(url):
     # urlparse.urlsplit() and switch back afterwards.
     if original_scheme is not None:
         url = _set_scheme(url, 'http')
-    toks = urllib.parse.urlsplit(url)
+    toks = urlparse.urlsplit(url)
     toks_orig_scheme = _change_urltoks_scheme(toks, original_scheme)
-    return urllib.parse.SplitResult(*toks_orig_scheme)
+    return urlparse.SplitResult(*toks_orig_scheme)
 
 
 def urljoin(base, url):
@@ -1363,7 +1361,7 @@ def urljoin(base, url):
     """
     base_scheme, url_scheme = urlsplit(base).scheme, urlsplit(url).scheme
     httpbase = _set_scheme(base, 'http')
-    joined = urllib.parse.urljoin(httpbase, url)
+    joined = urlparse.urljoin(httpbase, url)
     if not url_scheme:
         joined = _set_scheme(joined, base_scheme)
     return joined
